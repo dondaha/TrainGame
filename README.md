@@ -1,5 +1,12 @@
-# Vue 3 + Vite
+# 数字比划小火车
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## 任务要求
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+在单个回合中:
+
+1. 小火车(火车头和两节车厢)出现，第二个车厢带有一个1-9的数字。
+2. 屏幕上方随机掉落一个1-9的数字。
+3. 玩家用左右手分别比划两个数字，这两个数字之和等于掉落的数字。
+4. 玩家将能与车厢数字相加等于10的那个数字移近车厢。此时，数字自动变成10(第一个车厢显示1第二个车厢的数字变成0，这个0应呈现出虚幻的效果)。
+5. 然后玩家将另一只手(比划着剩余的数字)移动到第二个车厢，用该数字替换掉0
+6. 如果计算正确，小火车就会开走;如果不正确，则不会有任何反应。

@@ -4,6 +4,7 @@
 
 <script>
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import floorTextureUrl from '../assets/floor.jpeg';
 
 export default {
@@ -23,30 +24,35 @@ export default {
     renderer.shadowMap.enabled = true; // 启用阴影
     this.$el.appendChild(renderer.domElement);
 
+    // 初始化控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // 启用阻尼效果
+    controls.dampingFactor = 0.25;
+    controls.enableZoom = true; // 启用缩放
+    controls.enablePan = false; // 禁用平移
+
     // 加载地面贴图
     const textureLoader = new THREE.TextureLoader();
-    const floorTexture = textureLoader.load(floorTextureUrl);
+    const floorTexture = textureLoader.load(floorTextureUrl, (texture) => {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(100, 100); // 设置纹理重复
+    });
 
-    // 创建多个平面以覆盖更大的区域
-    const planeSize = 10;
+    // 创建一个大平面
+    const planeSize = 1000;
     const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
     const planeMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
-
-    for (let x = -5; x <= 5; x++) {
-      for (let z = -5; z <= 5; z++) {
-        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.rotation.x = -Math.PI / 2;
-        plane.position.set(x * planeSize, 0, z * planeSize);
-        plane.receiveShadow = true; // 接收阴影
-        scene.add(plane);
-      }
-    }
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.receiveShadow = true; // 接收阴影
+    scene.add(plane);
 
     // 创建一个立方体
-    const cubeGeometry = new THREE.BoxGeometry();
+    const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
     const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
     cube.castShadow = true; // 投射阴影
+    cube.position.set(0, 1, 0)
     scene.add(cube);
 
     // 添加从左后方射进来的平行光
@@ -64,8 +70,17 @@ export default {
 
       // 更新摄像机位置，使其跟随立方体
       camera.position.z = cube.position.z + 5;
+      camera.position.x = cube.position.x;
       camera.position.y = cube.position.y + 2;
       camera.lookAt(cube.position);
+
+      // 更新控制器
+      // controls.update();
+
+      // 更新阴影相机的位置和方向，使其跟随立方体
+      directionalLight.position.set(cube.position.x - 1, cube.position.y + 1, cube.position.z - 1);
+      directionalLight.target.position.set(cube.position.x, cube.position.y, cube.position.z);
+      directionalLight.target.updateMatrixWorld();
 
       // 渲染场景
       renderer.render(scene, camera);
