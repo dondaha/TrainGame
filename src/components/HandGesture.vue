@@ -16,11 +16,7 @@
 </template>
 
 <script>
-import {
-  GestureRecognizer,
-  FilesetResolver,
-  DrawingUtils,
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
 export default {
   data() {
@@ -32,103 +28,115 @@ export default {
       videoWidth: "480px", // 视频宽度
       lastVideoTime: -1, // 上一次视频时间
       results: undefined, // 识别结果
+      numHands: 2, // 手的数量
+      leftHandNumber: -1, // 左手数字
+      rightHandNumber: -1, // 右手数字
+      drawUtilsLoaded: false, // drawing_utils 是否已加载
     };
   },
   mounted() {
-    // 组件挂载后创建手势识别器
-    this.createGestureRecognizer();
+    this.loadDrawingUtils();
+    this.createHandLandmarker();
   },
   methods: {
-    async createGestureRecognizer() {
-      // 创建手势识别器实例
+    async loadDrawingUtils() {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js";
+      script.onload = () => {
+        this.drawUtilsLoaded = true;
+      };
+      document.head.appendChild(script);
+    },
+    async createHandLandmarker() {
       const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
       );
-      this.gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+      this.gestureRecognizer = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
-          modelAssetPath:
-            "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
-          delegate: "GPU",
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+          delegate: "GPU"
         },
         runningMode: this.runningMode,
+        numHands: this.numHands
       });
     },
-    async toggleWebcam() {
-      // 切换摄像头状态
-      if (!this.gestureRecognizer) {
-        alert("Please wait for gestureRecognizer to load");
+    toggleWebcam() {
+      if (this.webcamRunning) {
+        this.webcamRunning = false;
+      } else {
+        this.webcamRunning = true;
+        this.enableCam();
+      }
+    },
+    enableCam() {
+      const constraints = {
+        video: true
+      };
+      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+        this.$refs.video.srcObject = stream;
+        this.$refs.video.addEventListener("loadeddata", this.predictWebcam);
+      });
+    },
+    async predictWebcam() {
+      if (!this.drawUtilsLoaded) {
+        requestAnimationFrame(this.predictWebcam);
         return;
       }
 
-      this.webcamRunning = !this.webcamRunning;
+      const video = this.$refs.video;
+      const canvas = this.$refs.canvas;
+      const canvasCtx = canvas.getContext("2d");
 
-      if (this.webcamRunning) {
-        // 启用摄像头
-        const constraints = { video: true };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        this.$refs.video.srcObject = stream;
-        this.$refs.video.addEventListener("loadeddata", this.predictWebcam);
-      }
-    },
-    async predictWebcam() {
-      // 进行手势识别
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
       if (this.runningMode === "IMAGE") {
         this.runningMode = "VIDEO";
         await this.gestureRecognizer.setOptions({ runningMode: "VIDEO" });
       }
 
-      const nowInMs = Date.now();
-      if (this.$refs.video.currentTime !== this.lastVideoTime) {
-        this.lastVideoTime = this.$refs.video.currentTime;
-        this.results = this.gestureRecognizer.recognizeForVideo(
-          this.$refs.video,
-          nowInMs
-        );
+      const startTimeMs = performance.now();
+      if (this.lastVideoTime !== video.currentTime) {
+        this.lastVideoTime = video.currentTime;
+        this.results = this.gestureRecognizer.detectForVideo(video, startTimeMs);
       }
-
-      const canvasCtx = this.$refs.canvas.getContext("2d");
-      const drawingUtils = new DrawingUtils(canvasCtx);
 
       canvasCtx.save();
-      canvasCtx.clearRect(0, 0, this.$refs.canvas.width, this.$refs.canvas.height);
-
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
       if (this.results.landmarks) {
-        // 绘制手势连接线和关键点
         for (const landmarks of this.results.landmarks) {
-          drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
+          window.drawConnectors(canvasCtx, landmarks, window.HAND_CONNECTIONS, {
             color: "#00FF00",
-            lineWidth: 5,
+            lineWidth: 5
           });
-          drawingUtils.drawLandmarks(landmarks, {
-            color: "#FF0000",
-            lineWidth: 2,
-          });
+          window.drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
         }
       }
-
       canvasCtx.restore();
 
-      const gestureOutput = document.getElementById("gesture_output");
-      if (this.results.gestures.length > 0) {
-        // 显示手势识别结果
-        gestureOutput.style.display = "block";
-        gestureOutput.style.width = this.videoWidth;
-        const categoryName = this.results.gestures[0][0].categoryName;
-        const categoryScore = parseFloat(this.results.gestures[0][0].score * 100).toFixed(
-          2
-        );
-        const handedness = this.results.handednesses[0][0].displayName;
-        gestureOutput.innerText = `GestureRecognizer: ${categoryName}\n Confidence: ${categoryScore} %\n Handedness: ${handedness}`;
-      } else {
-        gestureOutput.style.display = "none";
-      }
+      this.processHandLandmarks(this.results.landmarks);
 
       if (this.webcamRunning) {
-        // 循环调用进行手势识别
         window.requestAnimationFrame(this.predictWebcam);
       }
     },
-  },
+    processHandLandmarks(landmarks) {
+      if (landmarks.length === 0) {
+        this.leftHandNumber = -1;
+        this.rightHandNumber = -1;
+      } else {
+        // 假设第一个手是左手，第二个手是右手
+        this.leftHandNumber = this.getHandNumber(landmarks[0]);
+        this.rightHandNumber = landmarks[1] ? this.getHandNumber(landmarks[1]) : -1;
+      }
+    },
+    getHandNumber(landmarks) {
+      // 这里可以根据手势关键点信息计算手势数字
+      // 例如：根据手指弯曲情况判断数字
+      // 这里只是一个示例，具体实现需要根据实际需求调整
+      return Math.floor(Math.random() * 5) + 1; // 随机返回1-5的数字
+    }
+  }
 };
 </script>
 
