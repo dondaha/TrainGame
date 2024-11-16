@@ -1,6 +1,6 @@
 <!-- GameView.vue -->
 <template>
-  <div>
+  <div id="game-view">
     <Train />
     <FallingNumber />
     <HandGesture />
@@ -22,5 +22,8 @@ export default {
 </script>
 
 <style scoped>
-/* 样式 */
+#game-view {
+  width: 100%;
+  height: 100%;
+}
 </style>

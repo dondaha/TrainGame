@@ -11,7 +11,9 @@
       {{ webcamRunning ? "DISABLE PREDICTIONS" : "ENABLE PREDICTIONS" }}
     </button>
     <!-- 显示手势识别结果 -->
-    <div id="gesture_output" class="gesture-output"></div>
+    <div id="gesture_output" class="gesture-output">
+    <p>Left Hand: {{ leftHandNumber }}, Right Hand: {{ rightHandNumber }}</p>
+    </div>
   </div>
 </template>
 
@@ -24,6 +26,7 @@ export default {
       gestureRecognizer: null, // 手势识别器实例
       runningMode: "IMAGE", // 运行模式，初始为图像模式
       webcamRunning: false, // 摄像头是否正在运行
+      predRunning: false, // 是否正在使用mediapipe预测
       videoHeight: "360px", // 视频高度
       videoWidth: "480px", // 视频宽度
       lastVideoTime: -1, // 上一次视频时间
@@ -32,12 +35,13 @@ export default {
       leftHandNumber: -1, // 左手数字
       rightHandNumber: -1, // 右手数字
       drawUtilsLoaded: false, // drawing_utils 是否已加载
-      angle_threshold: 30 // 判断手指弯曲的角度阈值
+      angle_threshold: 25 // 判断手指弯曲的角度阈值
     };
   },
   mounted() {
     this.loadDrawingUtils();
     this.createHandLandmarker();
+    this.toggleWebcam();
   },
   methods: {
     async loadDrawingUtils() {
@@ -120,7 +124,7 @@ export default {
 
       this.updateHandNumber(this.results); // 更新手的数字
 
-      console.log(this.leftHandNumber, this.rightHandNumber);
+      // console.log(this.leftHandNumber, this.rightHandNumber);
 
       if (this.webcamRunning) {
         window.requestAnimationFrame(this.predictWebcam);
@@ -177,10 +181,10 @@ export default {
 <style scoped>
 #hand-gesture {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 5px;
+  right: 5px;
   width: 320px;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.5);
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
