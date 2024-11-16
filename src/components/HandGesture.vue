@@ -32,6 +32,7 @@ export default {
       leftHandNumber: -1, // 左手数字
       rightHandNumber: -1, // 右手数字
       drawUtilsLoaded: false, // drawing_utils 是否已加载
+      angle_threshold: 30 // 判断手指弯曲的角度阈值
     };
   },
   mounted() {
@@ -103,38 +104,71 @@ export default {
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 应用水平翻转变换
+      canvasCtx.translate(canvas.width, 0);
+      canvasCtx.scale(-1, 1);
+      canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 绘制手部关键点
       if (this.results.landmarks) {
         for (const landmarks of this.results.landmarks) {
-          window.drawConnectors(canvasCtx, landmarks, window.HAND_CONNECTIONS, {
-            color: "#00FF00",
-            lineWidth: 5
-          });
           window.drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
         }
       }
-      canvasCtx.restore();
+      canvasCtx.restore(); // 恢复上下文状态
 
-      this.processHandLandmarks(this.results.landmarks);
+      this.updateHandNumber(this.results); // 更新手的数字
+
+      console.log(this.leftHandNumber, this.rightHandNumber);
 
       if (this.webcamRunning) {
         window.requestAnimationFrame(this.predictWebcam);
       }
     },
-    processHandLandmarks(landmarks) {
-      if (landmarks.length === 0) {
-        this.leftHandNumber = -1;
-        this.rightHandNumber = -1;
-      } else {
-        // 假设第一个手是左手，第二个手是右手
-        this.leftHandNumber = this.getHandNumber(landmarks[0]);
-        this.rightHandNumber = landmarks[1] ? this.getHandNumber(landmarks[1]) : -1;
+    /**
+     * 更新leftHandNumber和rightHandNumber
+     *
+     * @param {results} HandLandmarkerResult - The hand landmark detection results.
+     * @returns {void}
+     */
+    updateHandNumber(results) {
+      // 获取手的数量
+      const numHands = results.handednesses.length;
+      // 遍历检测到的手
+      for (let i = 0; i < numHands; i++){
+        const label = this.results.handednesses[i][0].categoryName === "Left" ? "Right" : "Left";
+        const score = this.results.handednesses[i][0].score;
+        // 设计一个数组，分别代表大拇指、食指、中指、无名指、小拇指的1，2点和3，4点的夹角
+        const angles = [];
+        // 遍历每个手指
+        for (let j = 0; j < 5; j++) {
+          // 获取手指的21个关键点
+          const points = results.landmarks[i].slice(j * 4 + 1, j * 4 + 5);
+          // 使用余弦定理计算两个向量的夹角（只考虑xy）
+          let angle = Math.acos(
+            ((points[0].x - points[1].x) * (points[2].x - points[3].x) +
+            (points[0].y - points[1].y) * (points[2].y - points[3].y)) /
+            (Math.sqrt(Math.pow(points[0].x - points[1].x, 2) + Math.pow(points[0].y - points[1].y, 2)) *
+              Math.sqrt(Math.pow(points[2].x - points[3].x, 2) + Math.pow(points[2].y - points[3].y, 2)))
+          );
+          // 转化为角度
+          angle = Math.abs(angle * 180 / Math.PI);
+          angles.push(angle);
+        }
+        // 根据angles中小于阈值的个数判断手势（0-5）
+        let number = 0;
+        for (let j = 0; j < 5; j++) {
+          if (angles[j] < this.angle_threshold) {
+            number++;
+          }
+        }
+        if (label === "Left") {
+          this.leftHandNumber = number;
+        } else {
+          this.rightHandNumber = number;
+        }
       }
-    },
-    getHandNumber(landmarks) {
-      // 这里可以根据手势关键点信息计算手势数字
-      // 例如：根据手指弯曲情况判断数字
-      // 这里只是一个示例，具体实现需要根据实际需求调整
-      return Math.floor(Math.random() * 5) + 1; // 随机返回1-5的数字
     }
   }
 };
