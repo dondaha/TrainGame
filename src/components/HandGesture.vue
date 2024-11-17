@@ -25,8 +25,8 @@ export default {
     return {
       gestureRecognizer: null, // 手势识别器实例
       runningMode: "IMAGE", // 运行模式，初始为图像模式
-      webcamRunning: false, // 摄像头是否正在运行
-      predRunning: false, // 是否正在使用mediapipe预测
+      webcamRunning: true, // 摄像头是否正在运行
+      predRunning: true, // 是否正在使用mediapipe预测
       videoHeight: "360px", // 视频高度
       videoWidth: "480px", // 视频宽度
       lastVideoTime: -1, // 上一次视频时间
@@ -41,7 +41,7 @@ export default {
   mounted() {
     this.loadDrawingUtils();
     this.createHandLandmarker();
-    this.toggleWebcam();
+    this.enableCam();
   },
   methods: {
     async loadDrawingUtils() {
@@ -83,7 +83,7 @@ export default {
       });
     },
     async predictWebcam() {
-      if (!this.drawUtilsLoaded) {
+      if (!this.drawUtilsLoaded || !this.gestureRecognizer) {
         requestAnimationFrame(this.predictWebcam);
         return;
       }
