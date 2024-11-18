@@ -17,13 +17,10 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import floorTextureUrl from "../assets/floor.jpeg";
 import minecartUrl from "../assets/木板矿车.glb";
 import trainUrl from "../assets/ImageToStl.com_forest_house.glb";
 import houseUrl from "../assets/forest_house.glb";
-import tokyoUrl from "../assets/LittlestTokyo.glb";
 import posx from "../assets/img/posx.jpg";
 import negx from "../assets/img/negx.jpg";
 import posy from "../assets/img/posy.jpg";
@@ -32,6 +29,14 @@ import posz from "../assets/img/posz.jpg";
 import negz from "../assets/img/negz.jpg";
 
 export default {
+  data() {
+    return {
+      mixer: null,
+      animationActions: [],
+      activeAction: null,
+      ready: false,
+    };
+  },
   mounted() {
     // 初始化场景
     const scene = new THREE.Scene();
@@ -64,17 +69,13 @@ export default {
     // 加载可爱木屋模型
     var house_loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
-    // 设置解压路径，这个文件直接放在项目的public目录下面即可，后面会截图指明gltf目录所在位置
     dracoLoader.setDecoderPath("/TrainGame/draco/");
     dracoLoader.setDecoderConfig({ type: "js" });
     dracoLoader.preload();
     house_loader.setDRACOLoader(dracoLoader);
     house_loader.load(houseUrl, (gltf) => {
       const root = gltf.scene;
-      // console.log(this.dumpObject(root).join("\n"));
-      // console.log(gltf);
       const house = gltf.scene;
-      // 循环让每个子对象都投射阴影
       for (let i = 0; i < house.children.length; i++) {
         house.children[i].castShadow = true; // 投射阴影
       }
@@ -86,17 +87,17 @@ export default {
     // 加载矿车模型
     const loader = new GLTFLoader();
     let minecart1;
-    let minecart2;
-    let mixer;
     const clock = new THREE.Clock();
     loader.load(trainUrl, (gltf) => {
       const root = gltf.scene;
-      mixer = new THREE.AnimationMixer(root);
-      mixer.clipAction(gltf.animations[1]).play();
-      console.log(this.dumpObject(root).join("\n"));
-      console.log(gltf);
+      this.mixer = new THREE.AnimationMixer(root);
+      this.animationActions[0] = this.mixer.clipAction(gltf.animations[0]);
+      this.animationActions[1] = this.mixer.clipAction(gltf.animations[1]);
+      this.animationActions[0].loop = THREE.LoopOnce; // 仅播放一次
+      this.animationActions[1].loop = THREE.LoopOnce;
+      this.animationActions[0].clampWhenFinished = true; // 动画结束后保持最后一帧
+      this.animationActions[1].clampWhenFinished = true;
       minecart1 = gltf.scene.children[0];
-      // console.log(minecart1);
       for (let i = 0; i < minecart1.children.length; i++) {
         minecart1.children[i].castShadow = true; // 投射阴影
       }
@@ -106,19 +107,15 @@ export default {
     });
 
     // 光线管理
-    // 添加从左后方射进来的平行光
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(-5, 5, -5).normalize();
     directionalLight.castShadow = true; // 光源投射阴影
-    // scene.add(directionalLight);
-    // 添加环境光
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
     // 添加背景
     const sky_loader = new THREE.CubeTextureLoader();
     const texture = sky_loader.load([posx, negx, posy, negy, posz, negz]);
-    // scene.background = texture;
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.background = new THREE.Color(0xf4ecdc);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -126,12 +123,11 @@ export default {
     // 动画函数
     const animate = () => {
       const delta = clock.getDelta();
-      if (mixer){
-        mixer.update( delta );
+      if (this.mixer) {
+        this.mixer.update(delta);
       }
       requestAnimationFrame(animate);
       controls.update();
-      // 渲染场景
       renderer.render(scene, camera);
     };
 
@@ -143,6 +139,7 @@ export default {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+    this.ready = true;
   },
   methods: {
     dumpObject(obj, lines = [], isLast = true, prefix = "") {
@@ -158,6 +155,14 @@ export default {
       });
       return lines;
     },
-  },
+    playAnimation(index) {
+      if (this.activeAction) {
+        this.activeAction.stop();
+      }
+      console.log(this.animationActions);
+      this.activeAction = this.animationActions[index];
+      this.activeAction.play()
+    }
+  }
 };
 </script>
