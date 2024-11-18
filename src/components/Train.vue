@@ -18,6 +18,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import minecartUrl from "../assets/木板矿车.glb";
 import trainUrl from "../assets/ImageToStl.com_forest_house.glb";
 import houseUrl from "../assets/forest_house.glb";
@@ -84,11 +86,25 @@ export default {
       scene.add(house);
     });
 
-    // 加载矿车模型
+    // 加载可爱小火车模型
     const loader = new GLTFLoader();
     let minecart1;
     const clock = new THREE.Clock();
     loader.load(trainUrl, (gltf) => {
+      // 加载数字模型
+      console.log(gltf)
+      // dumpObject
+      const lines = this.dumpObject(gltf.scene);
+      console.log(lines.join("\n"));
+      // gltf.scene.children[1:10]代表第一组数字0-9
+      // gltf.scene.children[11:20]代表第二组数字0-9
+      // 全部加载到scene中
+      // for (let i = 1; i < 20; i++) {
+      //   const number = gltf.scene.children[i];
+      //   // number.position.set(0, 0, 0);
+      //   scene.add(number);
+      //   console.log(number)
+      // }
       const root = gltf.scene;
       this.mixer = new THREE.AnimationMixer(root);
       this.animationActions[0] = this.mixer.clipAction(gltf.animations[0]);
@@ -97,6 +113,7 @@ export default {
       this.animationActions[1].loop = THREE.LoopOnce;
       this.animationActions[0].clampWhenFinished = true; // 动画结束后保持最后一帧
       this.animationActions[1].clampWhenFinished = true;
+      // 加载小火车模型
       minecart1 = gltf.scene.children[0];
       for (let i = 0; i < minecart1.children.length; i++) {
         minecart1.children[i].castShadow = true; // 投射阴影
@@ -104,6 +121,8 @@ export default {
       minecart1.castShadow = true; // 投射阴影
       minecart1.position.set(0, 0, 0);
       scene.add(minecart1);
+      
+
     });
 
     // 光线管理
@@ -159,7 +178,7 @@ export default {
       if (this.activeAction) {
         this.activeAction.stop();
       }
-      console.log(this.animationActions);
+      // console.log(this.animationActions);
       this.activeAction = this.animationActions[index];
       this.activeAction.play()
     }
