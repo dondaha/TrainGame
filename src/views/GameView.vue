@@ -1,4 +1,3 @@
-<!-- GameView.vue -->
 <template>
   <div id="game-view">
     <Train ref="train" :carriageNumber="carriageNumber" />
@@ -27,10 +26,10 @@ export default {
   data() {
     return {
       carriageNumber: -1,
-      // 掉落5-9之间的数字
       fallingNumber: -1,
       leftHandNumber: -1,
-      rightHandNumber: -1
+      rightHandNumber: -1,
+      round: 0 // 新增轮次计数
     };
   },
   methods: {
@@ -39,9 +38,7 @@ export default {
       this.rightHandNumber = right;
       this.checkGameLogic();
     },
-    updateNumber(){
-      // 更新掉落的数字和车厢数字
-      // 在如下的组合中随机选择：(1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9) (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9) (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9) (4, 5), (4, 6), (4, 7), (4, 8), (4, 9) (5, 6), (5, 7), (5, 8), (5, 9) (6, 7), (6, 8), (6, 9) (7, 8), (7, 9) (8, 9)
+    updateNumber() {
       const combinations = [
         [5, 6], [5, 7], [5, 8], [5, 9],
         [6, 7], [6, 8], [6, 9],
@@ -49,22 +46,29 @@ export default {
         [8, 9]
       ];
       const randomIndex = Math.floor(Math.random() * combinations.length);
-      this.carriageNumber = combinations[randomIndex][0]; 
+      this.carriageNumber = combinations[randomIndex][0];
       this.fallingNumber = combinations[randomIndex][1];
-    }
-    ,
+    },
     checkGameLogic() {
       if (this.leftHandNumber + this.rightHandNumber === this.fallingNumber) {
         if (this.leftHandNumber + this.carriageNumber === 10) {
           this.carriageNumber = this.rightHandNumber;
           this.$refs.train.playAnimation(0); // 播放过关动画
+          this.nextRound();
         } else if (this.rightHandNumber + this.carriageNumber === 10) {
           this.carriageNumber = this.leftHandNumber;
           this.$refs.train.playAnimation(0); // 播放过关动画
+          this.nextRound();
         }
       }
     },
-    Game(){
+    nextRound() {
+      this.round++;
+      setTimeout(() => {
+        this.Game();
+      }, 4000); // 延迟1秒开始下一轮
+    },
+    Game() {
       this.updateNumber();
       this.$refs.train.playAnimation(1); // 游戏开始时播放动画
       this.checkGameLogic();
