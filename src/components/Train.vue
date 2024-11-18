@@ -92,19 +92,10 @@ export default {
     const clock = new THREE.Clock();
     loader.load(trainUrl, (gltf) => {
       // 加载数字模型
-      console.log(gltf)
+      // console.log(gltf)
       // dumpObject
-      const lines = this.dumpObject(gltf.scene);
-      console.log(lines.join("\n"));
-      // gltf.scene.children[1:10]代表第一组数字0-9
-      // gltf.scene.children[11:20]代表第二组数字0-9
-      // 全部加载到scene中
-      // for (let i = 1; i < 20; i++) {
-      //   const number = gltf.scene.children[i];
-      //   // number.position.set(0, 0, 0);
-      //   scene.add(number);
-      //   console.log(number)
-      // }
+      // const lines = this.dumpObject(gltf.scene);
+      // console.log(lines.join("\n"));
       const root = gltf.scene;
       this.mixer = new THREE.AnimationMixer(root);
       this.animationActions[0] = this.mixer.clipAction(gltf.animations[0]);
@@ -121,9 +112,54 @@ export default {
       minecart1.castShadow = true; // 投射阴影
       minecart1.position.set(0, 0, 0);
       scene.add(minecart1);
-      
-
     });
+
+    // 加载数字模型
+    const number_group_a = new THREE.Group();
+    const number_group_b = new THREE.Group();
+    let textMesh1;
+    const font_loader = new FontLoader();
+    font_loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+      const font_setting = {
+        font: font,
+        size: 80,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 10,
+        bevelSize: 8,
+        bevelSegments: 5
+      };
+
+      for (let i = 0; i <= 9; i++) {
+        const geometry_a = new TextGeometry(i.toString(), font_setting);
+        geometry_a.computeBoundingBox();
+        const materials_a = [
+          new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true }), // front
+          new THREE.MeshPhongMaterial({ color: 0xffffff }) // side
+        ];
+        const textMesh_a = new THREE.Mesh(geometry_a, materials_a);;
+        // 缩小为0.003
+        textMesh_a.scale.set(0.003, 0.003, 0.003);
+        number_group_a.add(textMesh_a);
+
+        const geometry_b = new TextGeometry(i.toString(), font_setting);
+        geometry_b.computeBoundingBox();
+        const centerOffset_b = -0.5 * (geometry_b.boundingBox.max.x - geometry_b.boundingBox.min.x);
+        const materials_b = [
+          new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true }), // front
+          new THREE.MeshPhongMaterial({ color: 0xffffff }) // side
+        ];
+        const textMesh_b = new THREE.Mesh(geometry_b, materials_b);
+        // 缩小为0.003
+        textMesh_b.scale.set(0.003, 0.003, 0.003);
+        number_group_b.add(textMesh_b);
+      }
+
+      scene.add(number_group_a);
+      scene.add(number_group_b);
+    });
+    
 
     // 光线管理
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
