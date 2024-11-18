@@ -2,6 +2,16 @@
   <div id="train"></div>
 </template>
 
+<style scoped>
+#train {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+</style>
+
 <script>
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
@@ -82,7 +92,7 @@ export default {
     loader.load(trainUrl, (gltf) => {
       const root = gltf.scene;
       mixer = new THREE.AnimationMixer(root);
-      mixer.clipAction(gltf.animations[0]).play();
+      mixer.clipAction(gltf.animations[1]).play();
       console.log(this.dumpObject(root).join("\n"));
       console.log(gltf);
       minecart1 = gltf.scene.children[0];
@@ -151,13 +161,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-#train {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-</style>
