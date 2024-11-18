@@ -173,6 +173,7 @@ export default {
           this.rightHandNumber = number;
         }
       }
+      this.$emit('update-numbers', this.leftHandNumber, this.rightHandNumber);
     }
   }
 };
