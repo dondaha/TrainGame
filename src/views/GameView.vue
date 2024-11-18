@@ -39,15 +39,12 @@ export default {
       this.checkGameLogic();
     },
     updateNumber() {
-      const combinations = [
-        [5, 6], [5, 7], [5, 8], [5, 9],
-        [6, 7], [6, 8], [6, 9],
-        [7, 8], [7, 9],
-        [8, 9]
-      ];
+      const combinations = [[5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7], [7, 8], [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [8, 7], [9, 1], [9, 2], [9, 3], [9, 4], [9, 5], [9, 6]];
       const randomIndex = Math.floor(Math.random() * combinations.length);
       this.carriageNumber = combinations[randomIndex][0];
       this.fallingNumber = combinations[randomIndex][1];
+      this.$refs.train.setCarriageNumber(this.carriageNumber);
+      this.$refs.train.setFallingNumber(this.fallingNumber);
     },
     checkGameLogic() {
       if (this.leftHandNumber + this.rightHandNumber === this.fallingNumber) {
