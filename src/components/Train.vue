@@ -23,6 +23,7 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import minecartUrl from "../assets/木板矿车.glb";
 import trainUrl from "../assets/ImageToStl.com_forest_house.glb";
 import houseUrl from "../assets/forest_house.glb";
+import backgroundUrl from "../assets/img/background.jpg";
 
 export default {
   data() {
@@ -35,6 +36,7 @@ export default {
       numberMeshesB: [],
       fallingNumberMesh: null,
       carriageNumberMesh: null,
+      enableControls: false
     };
   },
   mounted() {
@@ -48,10 +50,9 @@ export default {
       0.1,
       1000
     );
-    camera.position.x = -1;
-    camera.position.z = 7;
-    camera.position.y = 2;
-    camera.lookAt(0, 0, 0);
+
+    camera.position.set(-0.7275645257505676, 1.3591467822156458, 4.8831706515515805);
+    camera.rotation.set(0.05135489133277585, -0.07308856817033685, 0.0037533971926168165);
 
     // 初始化渲染器
     const renderer = new THREE.WebGLRenderer();
@@ -60,11 +61,14 @@ export default {
     this.$el.appendChild(renderer.domElement);
 
     // 初始化控制器
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; // 启用阻尼效果
-    controls.dampingFactor = 0.25;
-    controls.enableZoom = true; // 启用缩放
-    controls.enablePan = true; // 禁用平移
+    let controls;
+    if (this.enableControls) {
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true; // 启用阻尼效果
+      controls.dampingFactor = 0.25;
+      controls.enableZoom = true; // 启用缩放
+      controls.enablePan = true; // 禁用平移
+    }
 
     // 加载可爱木屋模型
     var house_loader = new GLTFLoader();
@@ -83,6 +87,15 @@ export default {
       house.scale.set(1, 1, 1);
       scene.add(house);
     });
+
+    // 添加图片背景
+    const map = new THREE.TextureLoader().load( backgroundUrl );
+    const material = new THREE.SpriteMaterial( { map: map } );
+    const sprite = new THREE.Sprite( material );
+    // 设置位置
+    sprite.position.set( 0, 8, -5 );
+    sprite.scale.set( 30, 30, 30 );
+    scene.add( sprite );
 
     // 加载可爱小火车模型
     const loader = new GLTFLoader();
@@ -114,7 +127,7 @@ export default {
     font_loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
       const font_setting = {
         font: font,
-        size: 40,
+        size: 80,
         height: 1,
         curveSegments: 12,
         bevelEnabled: true,
@@ -165,6 +178,8 @@ export default {
 
     // 动画函数
     const animate = () => {
+      // 打印摄像机当前的位置和朝向
+      console.log(camera.position, camera.rotation);
       const delta = clock.getDelta();
       if (this.mixer) {
         this.mixer.update(delta);
@@ -175,8 +190,14 @@ export default {
           this.fallingNumberMesh.position.y = 0.6; // 限制掉落到地面
         }
       }
+      if (this.carriageNumberMesh && minecart1) {
+        const minecartPosition = minecart1.position;
+        this.carriageNumberMesh.position.set(minecartPosition.x, minecartPosition.y + 1, minecartPosition.z);
+      }
       requestAnimationFrame(animate);
-      controls.update();
+      if (this.enableControls){
+        controls.update();
+      }
       renderer.render(scene, camera);
     };
 
@@ -216,14 +237,17 @@ export default {
         this.carriageNumberMesh.position.set(0, 0, 0); // 重置位置
       }
       this.carriageNumberMesh = this.numberMeshesA[number];
-      this.carriageNumberMesh.position.set(0, 1, 0); // 放置在小火车上方
+      if (this.minecart) {
+        const minecartPosition = this.minecart.position;
+        this.carriageNumberMesh.position.set(minecartPosition.x, minecartPosition.y + 1, minecartPosition.z); // 放置在小火车上方
+      }
     },
     setFallingNumber(number) {
       if (this.fallingNumberMesh) {
         this.fallingNumberMesh.position.set(0, 0, 0); // 重置位置
       }
       this.fallingNumberMesh = this.numberMeshesB[number];
-      this.fallingNumberMesh.position.set(0, 1, 3); // 从天上开始掉落
+      this.fallingNumberMesh.position.set(0, 2, 3); // 从天上开始掉落
     }
   }
 };

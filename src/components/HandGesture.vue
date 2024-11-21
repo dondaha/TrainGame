@@ -162,11 +162,28 @@ export default {
         }
         // 根据angles中小于阈值的个数判断手势（0-5）
         let number = 0;
-        for (let j = 0; j < 5; j++) {
-          if (angles[j] < this.angle_threshold) {
-            number++;
+        // angle mask
+        let angle_mask = angles.map(angle => angle < this.angle_threshold ? 1 : 0);
+        console.log(angle_mask)
+        if (angle_mask == '0,0,0,0,0') {
+          // 0的情况，食指的第一个关节比第三个关节低
+          if (results.landmarks[i][7].y > results.landmarks[i][5].y) {
+            number = 0;
+          }else{
+            // 9的情况，食指的第一个关节比第三个关节高
+            number = 9;
           }
         }
+        else if (angle_mask == '0,1,0,0,0') number = 1;
+        else if (angle_mask == '0,1,1,0,0') number = 2;
+        else if (angle_mask == '0,1,1,1,0') number = 3;
+        else if (angle_mask == '0,1,1,1,1') number = 4;
+        else if (angle_mask == '1,1,1,1,1') number = 5;
+        else if (angle_mask == '1,0,0,0,1') number = 6;
+        else if (angle_mask == '1,1,1,0,0') number = 7;
+        else if (angle_mask == '1,1,0,0,0') number = 8;
+        else if (angle_mask == '0,0,0,0,0') number = 9;
+        else number = -1;
         if (label === "Left") {
           this.leftHandNumber = number;
         } else {
