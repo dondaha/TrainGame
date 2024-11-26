@@ -137,25 +137,26 @@ export default {
       };
 
       for (let i = 0; i <= 9; i++) {
+        let material_color = 0xF5B041;
         const geometry_a = new TextGeometry(i.toString(), font_setting);
         geometry_a.computeBoundingBox();
         const materials_a = [
-          new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true }), // front
-          new THREE.MeshPhongMaterial({ color: 0xffffff }) // side
+          new THREE.MeshPhongMaterial({ color: material_color, flatShading: true, emissive:material_color }), // front
+          new THREE.MeshPhongMaterial({ color: material_color,emissive:material_color }) // side
         ];
         const textMesh_a = new THREE.Mesh(geometry_a, materials_a);
-        textMesh_a.scale.set(0.003, 0.003, 0.003);
+        textMesh_a.scale.set(0.004, 0.004, 0.004);
         number_group_a.add(textMesh_a);
         this.numberMeshesA.push(textMesh_a);
 
         const geometry_b = new TextGeometry(i.toString(), font_setting);
         geometry_b.computeBoundingBox();
         const materials_b = [
-          new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: true }), // front
-          new THREE.MeshPhongMaterial({ color: 0xffffff }) // side
+          new THREE.MeshPhongMaterial({ color: material_color, flatShading: true,emissive:material_color }), // front
+          new THREE.MeshPhongMaterial({ color: material_color,emissive:material_color }) // side
         ];
         const textMesh_b = new THREE.Mesh(geometry_b, materials_b);
-        textMesh_b.scale.set(0.003, 0.003, 0.003);
+        textMesh_b.scale.set(0.004, 0.004, 0.004);
         number_group_b.add(textMesh_b);
         this.numberMeshesB.push(textMesh_b);
       }
@@ -192,7 +193,7 @@ export default {
       }
       if (this.carriageNumberMesh && minecart1) {
         const minecartPosition = minecart1.position;
-        this.carriageNumberMesh.position.set(minecartPosition.x, minecartPosition.y + 1, minecartPosition.z);
+        this.carriageNumberMesh.position.set(minecartPosition.x-0.05, minecartPosition.y + 0.6, minecartPosition.z);
       }
       requestAnimationFrame(animate);
       if (this.enableControls){
